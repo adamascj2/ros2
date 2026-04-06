@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+=============================================================================
+PROJETO: Jeti-auto - Classe 5 (Sistemas de áudio e Feedback)
+AUTOR: Professor
+DATA: 04/04/2026
+
+NOTAS DE INSTALAÇÃO (O que não veio no JetAuto padrão):
+1. sudo apt-get update
+2. sudo apt-get install espeak -y        (Motor de síntese de voz)
+3. sudo apt-get install alsa-utils -y    (Ferramentas amixer/aplay)
+4. Configuração de hardware: Caixa USB detectada como CARD 3, DEVICE 0.
+=============================================================================
+"""
+
+import os
+import time
+
+class JetiAudio:
+    def __init__(self, card_id=4):
+        self.card = card_id
+        self.device = 0
+        self.hw_addr = f"plughw:{self.card},{self.device}"
+
+    def configurar_volume(self):
+        """Define volumes e retira o Mudo (Unmute) do Card 3"""
+        print(f"Configurando mixer de áudio no Card {self.card}...")
+        # Comandos amixer para garantir que as 'torneiras' estão abertas
+        os.system(f"amixer -c {self.card} sset 'Speaker' unmute 100% > /dev/null 2>&1")
+        os.system(f"amixer -c {self.card} sset 'Playback' unmute 100% > /dev/null 2>&1")
+        os.system(f"amixer -c {self.card} sset 'PCM' unmute 100% > /dev/null 2>&1")
+        time.sleep(0.5)
+
+    def falar(self, texto):
+        """Sintetiza voz e envia diretamente para o hardware USB"""
+        print(f"Robô diz: {texto}")
+        # O pipe conecta o espeak ao aplay direcionado ao card 3
+        comando = f'espeak -v pt-br "{texto}" --stdout | aplay -D {self.hw_addr} > /dev/null 2>&1'
+        os.system(comando)
+
+def main():
+    # Inicializa o sistema de áudio
+    audio = JetiAudio(card_id=3)
+    
+    # Passo 1: Garantir que o volume está alto e sem mudo
+    audio.configurar_volume()
+    
+    # Passo 2: Saudação inicial
+    audio.falar("Configuração concluída. Sistema de áudio do Jeti-auto operacional no CARD 4.")
+    
+    time.sleep(1)
+    
+    # Passo 3: Exemplo de aviso de status
+    audio.falar("Oi pessoal do curso.Todos os parâmetros foram salvos com sucesso.")
+
+if __name__ == "__main__":
+    main()
