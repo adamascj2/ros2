@@ -11,7 +11,7 @@ NOTAS DE INSTALAÇÃO (O que não veio no JetAuto padrão):
 1. sudo apt-get update
 2. sudo apt-get install espeak -y        (Motor de síntese de voz)
 3. sudo apt-get install alsa-utils -y    (Ferramentas amixer/aplay)
-4. Configuração de hardware: Caixa USB detectada como CARD 3, DEVICE 0.
+4. Configuração de hardware: Caixa USB detectada como CARD 4, DEVICE 0.
 =============================================================================
 """
 
@@ -25,7 +25,7 @@ class JetiAudio:
         self.hw_addr = f"plughw:{self.card},{self.device}"
 
     def configurar_volume(self):
-        """Define volumes e retira o Mudo (Unmute) do Card 3"""
+        """Define volumes e retira o Mudo (Unmute) do Card 4"""
         print(f"Configurando mixer de áudio no Card {self.card}...")
         # Comandos amixer para garantir que as 'torneiras' estão abertas
         os.system(f"amixer -c {self.card} sset 'Speaker' unmute 100% > /dev/null 2>&1")
@@ -36,13 +36,13 @@ class JetiAudio:
     def falar(self, texto):
         """Sintetiza voz e envia diretamente para o hardware USB"""
         print(f"Robô diz: {texto}")
-        # O pipe conecta o espeak ao aplay direcionado ao card 3
+        # O pipe conecta o espeak ao aplay direcionado ao card 4
         comando = f'espeak -v pt-br "{texto}" --stdout | aplay -D {self.hw_addr} > /dev/null 2>&1'
         os.system(comando)
 
 def main():
     # Inicializa o sistema de áudio
-    audio = JetiAudio(card_id=3)
+    audio = JetiAudio(card_id=4)
     
     # Passo 1: Garantir que o volume está alto e sem mudo
     audio.configurar_volume()
