@@ -1,0 +1,20 @@
+import os
+import time
+
+def testar_voz():
+    print("--- Teste 1: Voz Sintetizada (espeak) ---")
+    # O comando 'espeak' envia áudio direto para a saída padrão (sua USB)
+    frase = "Teste de áudio do robô Jeti-auto. Sistema operacional ok."
+    os.system(f'espeak -v pt-br "{frase}"')
+    time.sleep(2)
+
+def testar_som_sistema():
+    print("--- Teste 2: Som de Sistema (Bipe) ---")
+    # Tenta tocar um som nativo do Ubuntu se existir, ou gera um tom
+    os.system('speaker-test -t sine -f 440 -l 1')
+
+if __name__ == "__main__":
+    print("Iniciando diagnóstico de áudio USB...")
+    testar_voz()
+    testar_som_sistema()
+    print("Fim do teste.")
