@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+import time
+
+class NavegadorInfinito(Node):
+    def __init__(self):
+        super().__init__('navegador_infinito')
+
+        qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.subscription = self.create_subscription(LaserScan, '/scan', self.scan_callback, qos)
+
+        self.distancia_frontal = 99.0
+        self.estado = "AVANCAR"
+        self.tempo_inicio_missao = time.time()
+        self.duracao_missao = 180.0  # 3 minutos de coragem!
+
+        # --- PARÂMETROS CALIBRADOS ---
+        self.distancia_trigger = 0.50
+        self.tempo_giro_90 = 3.3     # Seu valor perfeito
+        self.velocidade_linear = 0.12 # Um pouco mais rápido para a sala
+        # -----------------------------
+
+        print(f"=== MISSÃO VIA: 3 MINUTOS DE AUTONOMIA ===")
+        self.timer = self.create_timer(0.1, self.control_loop)
+
+    def scan_callback(self, msg):
+        # Monitoramento constante da frente
+      puntos = [d for d in msg.ranges[:15] if d > 0.05] + \
+                 [d for d in msg.ranges[-15:] if d > 0.05]
+        if puntos:
+            self.distancia_frontal = min(puntos)
+
+    def control_loop(self):
+        msg = Twist()
+        tempo_atual = time.time() - self.tempo_inicio_missao
+
+        # Verificação de segurança: O tempo acabou?
+        if tempo_atual >= self.duracao_missao:
+            self.encerrar_missao("TEMPO ESGOTADO - SUCESSO TOTAL!")
+            return
+
+        if self.estado == "AVANCAR":
+            print(f"[{tempo_atual:>5.1f}s] Navegando... Dist: {self.distancia_frontal:.2f}m", end='\r')
+
+            if self.distancia_frontal < self.distancia_trigger:
+                print(f"\n[{tempo_atual:.1f}s] Obstáculo! Iniciando manobra de desvio...")
+                self.estado = "GIRAR"
+                self.inicio_giro = time.time()
+            else:
+                msg.linear.x = self.velocidade_linear
+                self.publisher_.publish(msg)
+
+        elif self.estado == "GIRAR":
+            if (time.time() - self.inicio_giro) < self.tempo_giro_90:
+                msg.angular.z = -0.8 # Gira para a direita
+                self.publisher_.publish(msg)
+            else:
+                print(f"[{tempo_atual:.1f}s] Caminho livre. Retomando avanço.")
+                      self.estado = "AVANCAR"
+
+    def encerrar_missao(self, motivo):
+        print(f"\n\n=== {motivo} ===")
+        msg = Twist()
+        for _ in range(15): # Garante a parada total
+            self.publisher_.publish(msg)
+        self.timer.cancel()
+        raise SystemExit
+
+def main():
+    rclpy.init()
+    node = NavegadorInfinito()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+          self.estado = "AVANCAR"
+    
