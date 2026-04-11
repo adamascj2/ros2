@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+import time
+
+class Manobra90Graus(Node):
+    def __init__(self):
+        super().__init__('manobra_90_graus')
+        
+        qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.subscription = self.create_subscription(LaserScan, '/scan', self.scan_callback, qos)
+        
+        self.distancia_frontal = 99.0
+        self.estado = "AVANCAR"
+        self.distancia_trigger = 0.50 # Detecta a 50cm
+        
+        # --- VARIÁVEIS DE CALIBRAÇÃO ---
+        self.tempo_giro_90 = 3.6  # Ajustado de 1.8 para 3.6 para dobrar o angulo
+        self.tempo_frente_final = 2.0
+        # -------------------------------
+
+        print("=== INICIANDO EXPERIMENTO: DESVIO DE 90 GRAUS ===")
+        self.timer = self.create_timer(0.1, self.control_loop)
+
+    def scan_callback(self, msg):
+        puntos = [d for d in msg.ranges[:15] if d > 0.05] + \
+                 [d for d in msg.ranges[-15:] if d > 0.05]
+        if puntos:
+            self.distancia_frontal = min(puntos)
+
+    def control_loop(self):
+        msg = Twist()
+
+        if self.estado == "AVANCAR":
+            print(f"Estado: Avançando... Distância: {self.distancia_frontal:.2f}m", end='\r')
+            if self.distancia_frontal < self.distancia_trigger:
+                print(f"\n[!] PAREDE DETECTADA! Iniciando giro de 90 graus...")
+                self.estado = "GIRAR"
+                self.start_manobra = time.time()
+            else:
+                msg.linear.x = 0.1
+                self.publisher_.publish(msg)
+
+        elif self.estado == "GIRAR":
+            # Gira pelo tempo calculado para 90 graus
+            decorrido = time.time() - self.start_manobra
+            if decorrido < self.tempo_giro_90:
+                msg.angular.z = -0.8 # Girando para a DIREITA
+                self.publisher_.publish(msg)
+            else:
+                print("[!] Giro de 90° concluído. Avançando para posição final...")
+                self.estado = "FINALIZAR"
+                self.start_manobra = time.time()
+
+        elif self.estado == "FINALIZAR":
+            if (time.time() - self.start_manobra) < self.tempo_frente_final:
+                msg.linear.x = 0.1
+                self.publisher_.publish(msg)
+            else:
+                self.parar_total()
+
+    def parar_total(self):
+        print("\n=== MISSÃO CUMPRIDA: ROBÔ EM SEGURANÇA ===")
+        msg = Twist()
+        for _ in range(10):
+            self.publisher_.publish(msg)
+        self.timer.cancel()
+        raise SystemExit
+
+def main():
+    rclpy.init()
+    node = Manobra90Graus()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
