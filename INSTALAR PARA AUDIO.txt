@@ -1,0 +1,7 @@
+sudo apt update
+sudo apt install python3-pyaudio portaudio19-dev espeak -y
+pip3 install SpeechRecognition
+
+
+sudo apt-get update
+sudo apt-get install mpg123 espeak -y
