@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+import os
+import time
+import speech_recognition as sr
+
+# Configurações de Hardware
+MEU_INDICE = 26 
+
+def falar(texto):
+    print(f"\n[VOZ] {texto}")
+    os.system(f'espeak -v pt-br "{texto}" > /dev/null 2>&1')
+
+def mover_e_parar():
+    """Move o robô por 1 segundo e depois força a parada"""
+    print("[MOVIMENTO] Andando...")
+    # Comando para ANDAR (Velocidade 0.1)
+    cmd_andar = 'ros2 topic pub -1 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}, angular: {z: 0.0}}"'
+    os.system(f"{cmd_andar} > /dev/null 2>&1")
+    
+    # ESPERA 1 SEGUNDO (Tempo de movimento)
+    time.sleep(1)
+    
+    print("[MOVIMENTO] Parando!")
+    # Comando para PARAR (Tudo em 0.0)
+    cmd_parar = 'ros2 topic pub -1 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}"'
+    os.system(f"{cmd_parar} > /dev/null 2>&1")
+
+def ouvir_e_agir():
+    rec = sr.Recognizer()
+    rec.energy_threshold = 300 
+    
+    try:
+        with sr.Microphone(device_index=MEU_INDICE) as source:
+            os.system("clear")
+            print("==========================================")
+            print("      JETAUTO: VOZ + MOVIMENTO    ")
+            print("==========================================")
+            
+            falar("Sistema pronto. Diga ALEXA para eu andar um pouco.")
+            
+            print("\n>>> ESCUTANDO... (Fale ALEXA agora) <<<")
+            rec.adjust_for_ambient_noise(source, duration=0.8)
+            
+            audio = rec.listen(source, timeout=6, phrase_time_limit=3)
+            print("Processando...")
+            
+            texto = rec.recognize_google(audio, language="pt-BR").upper().strip()
+            print(f"RESULTADO: Você disse '{texto}'")
+
+            if "ALEXA" in texto or "AHLEXA" in texto or texto == "ALEXA":
+                falar("Palavra ALEXA reconhecida. Andando e parando.")
+                mover_e_parar()
+            else:
+                falar(f"Ouvi {texto}.")
+
+    except sr.WaitTimeoutError:
+        print("\n[!] Silêncio.")
+    except sr.UnknownValueError:
+        print("\n[!] Não entendi.")
+    except Exception as e:
+        print(f"\n[ERRO] {e}")
+
+if __name__ == "__main__":
+    # Garante volume de captura
+    os.system("amixer -c 4 sset 'Capture' 100% > /dev/null 2>&1")
+    
+    try:
+        while True:
+            ouvir_e_agir()
+            print("\n--- Próximo comando em 3s ---")
+            time.sleep(3)
+    except KeyboardInterrupt:
+        # Segurança extra: se você der Ctrl+C, ele tenta parar o robô
+        os.system('ros2 topic pub -1 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}" > /dev/null 2>&1')
+        print("\nEncerrando com segurança.")
