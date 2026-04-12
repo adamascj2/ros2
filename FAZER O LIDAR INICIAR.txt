@@ -1,10 +1,2 @@
  source ~/ros2_ws/install/setup.bash && ros2 run sllidar_ros2 sllidar_node --ros-args -p serial_port:=/dev/ttyCH341USB0 -p frame_id:=laser -p serial_baudrate:=115200
-/opt/ros/humble/local_setup.bash:.:11: no such file or directory: /home/ubuntu/local_setup.sh
-not found: "/home/ubuntu/local_setup.bash"
-[INFO] [1775406561.022838177] [sllidar_node]: SLLidar running on ROS2 package SLLidar.ROS2 SDK Version:1.0.1, SLLIDAR SDK Version:2.1.0
-[INFO] [1775406561.051642480] [sllidar_node]: SLLidar S/N: A0E0FA89C7E19EC8BCE499F02B375670
-[INFO] [1775406561.051761363] [sllidar_node]: Firmware Ver: 1.29
-[INFO] [1775406561.051785011] [sllidar_node]: Hardware Rev: 7
-[INFO] [1775406561.054422575] [sllidar_node]: SLLidar health status : 0
-[INFO] [1775406561.054494417] [sllidar_node]: SLLidar health status : OK.
-[INFO] [1775406561.315243417] [sllidar_node]: current scan mode: Sensitivity, sample rate: 8 Khz, max_distance: 12.0 m, scan frequency:10.0 Hz,
+
