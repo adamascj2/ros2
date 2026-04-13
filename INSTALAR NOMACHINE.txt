@@ -1,0 +1,18 @@
+Link Direto (Copie e cole no navegador do seu Notebook):
+https://download.nomachine.com/download/9.4/Arm/nomachine_9.4.14_1_arm64.deb
+
+Passo a Passo Final para a sua Classe 5:
+No seu Notebook (Windows): Baixe o arquivo pelo link acima.
+
+Verifique o Nome: Ele DEVE ser nomachine_9.4.14_1_arm64.deb.
+
+Envie para o Orin Nano:
+
+PowerShell
+scp nomachine_9.4.14_1_arm64.deb ubuntu@192.168.0.28:~/Downloads/
+No terminal do Robô: Instale o pacote que agora terá os 76 MB corretos:
+
+Bash
+sudo dpkg -i ~/Downloads/nomachine_9.4.14_1_arm64.deb
+Por que os outros links falharam?
+O artigo menciona suporte para "Linux 32-bit and 64-bit", mas em sistemas operacionais, "64-bit" sem sobrenome geralmente refere-se ao amd64 (PCs). Para o Jetson Orin Nano, o termo chave é sempre ARMv8 ou arm64.
